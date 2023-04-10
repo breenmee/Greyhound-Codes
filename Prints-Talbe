@@ -1,0 +1,19 @@
+import requests
+from bs4 import BeautifulSoup
+
+url = input("Enter URL: ")
+page = requests.get(url)
+soup = BeautifulSoup(page.content, 'html.parser')
+
+for table in soup.find_all('table'):
+    for row in table.find_all('tr'):
+        row_data = []
+        for cell in row.find_all('td'):
+            row_data.append(cell.text.strip())
+        print("Row data:", row_data)
+        for i, cell in enumerate(row_data):
+            if len(cell) == 7 and cell[:3].isdigit() and cell[3:6].isdigit() and cell[6].isalpha():
+                for j in range(i+1, len(row_data)):
+                    if len(row_data[j]) == 7 and row_data[j][:3].isdigit() and row_data[j][3] == '.' and row_data[j][4:6].isdigit() and row_data[j][6:].isdigit():
+                        print(cell, row_data[j])
+                        break
