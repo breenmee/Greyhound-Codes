@@ -1,0 +1,76 @@
+rom bs4 import BeautifulSoup
+import requests
+import csv
+
+
+def get_dog_info():
+    url = input("Enter a URL: ")
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # find the table by its class name
+    table = soup.find('table', class_='igb-tbl igb-tbl--make-smaller')
+
+    # extract the table rows
+    rows = table.find_all('tr')
+
+    # create a 2D list to hold the table data
+    table_data = []
+    for row in rows:
+        cells = row.find_all(['td', 'th'])
+        row_data = []
+        for cell in cells:
+            row_data.append(cell.get_text(strip=True))
+        if row_data:
+            table_data.append(row_data)
+
+    # find the column indices for 'Dist.' and 'Est. Tm'
+    header_row = table_data[0]
+    dist_idx = header_row.index('Dist.')
+    est_tm_idx = header_row.index('Est. Tm')
+
+    # create a new 2D list to hold only the 'Dist.', 'Est. Tm', and 'Yd/Sec' data
+    filtered_data = [['Dist.', 'Est. Tm', 'Yd/Sec']]
+    yd_sec_total = 0  # initialize total for Yd/Sec calculation
+    for row in table_data[1:]:
+        # extract the first three digits of Dist.
+        dist_val = row[dist_idx][:3]
+
+        # extract the Est. Tm value, removing the * if present
+        est_tm_val = row[est_tm_idx].replace('*', '')
+
+        # calculate Yd/Sec value and add to total
+        yd_sec_val = round(int(dist_val) / float(est_tm_val), 2)
+        yd_sec_total += yd_sec_val
+
+        # add row to filtered data with Yd/Sec value included
+        filtered_data.append([dist_val, est_tm_val, str(yd_sec_val)])
+
+    # calculate the maximum width of each column
+    column_widths = [max(len(row[i]) for row in filtered_data) for i in range(len(filtered_data[0]))]
+
+    # print the table header
+    print('+', end='')
+    for width in column_widths:
+        print('-' * (width + 2) + '+', end='')
+    print()
+
+    # print the table rows
+    for row in filtered_data:
+        print('|', end='')
+        for i in range(len(row)):
+            print(' ' + row[i].ljust(column_widths[i]) + ' |', end='')
+        print()
+
+    # print the table footer
+    print('+', end='')
+    for width in column_widths:
+        print('-' * (width + 2) + '+', end='')
+    print()
+
+    # print the average Yd/Sec
+    avg_yd_sec = round(yd_sec_total / (len(filtered_data) - 1), 2)
+    print(f"\nAverage Yards per Second: {avg_yd_sec}")
+
+
+get_dog_info()
